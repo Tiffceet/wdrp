@@ -168,7 +168,7 @@ void ReportCurrentSongStatus(PlaybackState playbackState)
 	}
 	else {
 		g_presenceInfo.SetStateText("Unknown Artist");
-	
+	}
 	
     std::string detailsMessage;
     if (g_pluginSettings.DisplayTitleInStatus)
