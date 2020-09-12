@@ -127,7 +127,48 @@ void ReportCurrentSongStatus(PlaybackState playbackState)
 	assert(playbackState != Stopped);
 	g_presenceInfo.CurrentPlaybackState = playbackState;
 	g_presenceInfo.SetStartTimestamp(0);
-	g_presenceInfo.SetStateText(playbackState == Playing ? "(Playing)" : "(Paused)");
+	// g_presenceInfo.SetStateText(playbackState == Playing ? "(Playing)" : "(Paused)");
+	
+	// Replaced the (Playing) / (Paused) with artist name instead
+	// Because i still havent figure out how to get artist name from winamp SDK i will stick with filename parsing
+	// Expected filename = fullPathToSong/SongFileName.ext
+	wchar_t* filename;
+	wchar_t parsedSongArtist[100];
+	filename = (wchar_t*) SendMessage(g_plugin.hwndParent, WM_WA_IPC, 0, IPC_GET_PLAYING_FILENAME);
+
+	// Find last dash 
+	int lastDashIndex = -1;
+	for (size_t i = 0; i < wcslen(filename); i++) {
+		if (filename[i] == '-') {
+			lastDashIndex = i;
+			lastDashIndex += 2; // Because my songs file format looks like this: <title> - <artist>
+		}
+	}
+
+	// Find last dot location to remove the .mp3 / .flac
+	int lastDotIndex = -1;
+	for (size_t i = 0; i < wcslen(filename); i++) {
+		if (filename[i] == '.') {
+			lastDotIndex = i;
+		}
+	}
+	
+	// If dash is found and dot is found
+	if (lastDashIndex != -1 && lastDotIndex != -1) {
+		int j = 0;
+		for (int i = lastDashIndex; i < lastDotIndex; i++) {
+			parsedSongArtist[j++] = filename[i];
+		}
+		parsedSongArtist[j] = '\0';
+		std::wstring meta_inwstr(parsedSongArtist);
+
+		std::wstring_convert<std::codecvt_utf8<wchar_t>> convertWideToUTF8;
+
+		g_presenceInfo.SetStateText(convertWideToUTF8.to_bytes(meta_inwstr).c_str());
+	}
+	else {
+		g_presenceInfo.SetStateText("Unknown Artist");
+	
 	
     std::string detailsMessage;
     if (g_pluginSettings.DisplayTitleInStatus)
